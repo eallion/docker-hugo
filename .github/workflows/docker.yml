@@ -25,13 +25,13 @@ jobs:
       uses: oprypin/find-latest-tag@v1
       with:
         repository: gohugoio/hugo
-        release-only: true
+        releases-only: true
 
     - id: local_version
       uses: oprypin/find-latest-tag@v1
       with:
         repository: eallion/docker-hugo
-        release-only: true
+        releases-only: true
 
     - if: steps.local_version.outputs.tag == steps.remote_version.outputs.tag
       run: echo "No update, skip."
