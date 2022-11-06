@@ -21,45 +21,49 @@ jobs:
 
     steps:
 
-    - id: remote_version
-      uses: oprypin/find-latest-tag@v1
-      with:
-        repository: gohugoio/hugo
-        releases-only: true
+    - name: Get Hugo version
+      id: hugo_version
+      run: |
+        HUGO_VERSION() {
+          curl --silent "https://api.github.com/repos/gohugoio/hugo/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/;s/v//g'
+        }
+        echo "HUGO_VERSION=$(HUGO_VERSION)" >> $GITHUB_ENV
 
-    - id: local_version
-      uses: oprypin/find-latest-tag@v1
-      with:
-        repository: eallion/docker-hugo
-        releases-only: true
+    - name: Get local version
+      id: local_version
+      run: |
+        LOCAL_VERSION() {
+          curl --silent "https://api.github.com/repos/eallion/docker-hugo/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/;s/v//g'
+        }
+        echo "LOCAL_VERSION=$(LOCAL_VERSION)" >> $GITHUB_ENV
 
-    - if: steps.local_version.outputs.tag == steps.remote_version.outputs.tag
+    - if: ${{ env.LOCAL_VERSION }} == ${{ env.HUGO_VERSION }}
       run: echo "No update, skip."
 
     - name: Checkout
-      if: steps.local_version.outputs.tag != steps.remote_version.outputs.tag
+      if: ${{ env.LOCAL_VERSION }} != ${{ env.HUGO_VERSION }}
       uses: actions/checkout@v3
 
     - name: Set up QEMU
-      if: steps.local_version.outputs.tag != steps.remote_version.outputs.tag
+      if: ${{ env.LOCAL_VERSION }} != ${{ env.HUGO_VERSION }}
       uses: docker/setup-qemu-action@v2
 
     - name: Set up Docker Buildx
-      if: steps.local_version.outputs.tag != steps.remote_version.outputs.tag
+      if: ${{ env.LOCAL_VERSION }} != ${{ env.HUGO_VERSION }}
       id: buildx
       uses: docker/setup-buildx-action@v2
       with:
         install: true
 
     - name: Login to Docker Hub
-      if: steps.local_version.outputs.tag != steps.remote_version.outputs.tag
+      if: ${{ env.LOCAL_VERSION }} != ${{ env.HUGO_VERSION }}
       uses: docker/login-action@v2
       with:
         username: ${{ secrets.DOCKER_HUGO_USERNAME }}
         password: ${{ secrets.DOCKER_HUGO_TOKEN }}
 
     - name: Login to Coding.net
-      if: steps.local_version.outputs.tag != steps.remote_version.outputs.tag
+      if: ${{ env.LOCAL_VERSION }} != ${{ env.HUGO_VERSION }}
       uses: docker/login-action@v2
       with:
         registry: eallion-docker.pkg.coding.net/eallion/hugo
@@ -67,17 +71,13 @@ jobs:
         password: ${{ secrets.CODING_HUGO_TOKEN }}
 
     - name: Download latest Hugo
-      if: steps.local_version.outputs.tag != steps.remote_version.outputs.tag
+      if: ${{ env.LOCAL_VERSION }} != ${{ env.HUGO_VERSION }}
       run: |
         mkdir tmp
         bash hugo.sh
-        HUGO_VERSION() {
-          curl --silent "https://api.github.com/repos/gohugoio/hugo/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/;s/v//g'
-        }
-        echo "VERSION=$(HUGO_VERSION)" >> $GITHUB_ENV
 
     - name: Build and Push
-      if: steps.local_version.outputs.tag != steps.remote_version.outputs.tag
+      if: ${{ env.LOCAL_VERSION }} != ${{ env.HUGO_VERSION }}
       id: docker_build
       uses: docker/build-push-action@v3
       with:
@@ -87,13 +87,13 @@ jobs:
         push: true
         tags: |
           eallion/hugo:latest
-          eallion/hugo:${{ env.VERSION }}
+          eallion/hugo:${{ env.HUGO_VERSION }}
           eallion-docker.pkg.coding.net/eallion/hugo/hugo:latest
-          eallion-docker.pkg.coding.net/eallion/hugo/hugo:${{ env.VERSION }}
+          eallion-docker.pkg.coding.net/eallion/hugo/hugo:${{ env.HUGO_VERSION }}
 
     - name: Release
-      if: steps.local_version.outputs.tag != steps.remote_version.outputs.tag
+      if: ${{ env.LOCAL_VERSION }} != ${{ env.HUGO_VERSION }}
       uses: softprops/action-gh-release@v1
       with:
         token: ${{ secrets.GH_HUGO_TOKEN }}
-        tag_name: v${{ env.VERSION }}
+        tag_name: v${{ env.HUGO_VERSION }}
