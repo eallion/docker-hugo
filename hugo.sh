@@ -7,7 +7,7 @@ get_latest_release() {
 version=$(get_latest_release)
 
 sha256sums() {
-    curl -fsSL "https://github.com/gohugoio/hugo/releases/download/v${version}/hugo_${version}_checksums.txt" | grep "hugo_${version}_linux-amd64.deb" | cut -d " " -f 1
+    curl -fsSL "https://github.com/gohugoio/hugo/releases/download/v${version}/hugo_${version}_checksums.txt" | grep "hugo_extended_${version}_linux-amd64.deb" | cut -d " " -f 1
 }
 
 get_latest_release() {
@@ -15,7 +15,7 @@ get_latest_release() {
 }
 
 version=$(get_latest_release)
-ghurl="https://github.com/gohugoio/hugo/releases/download/v${version}/hugo_${version}_linux-amd64.deb"
+ghurl="https://github.com/gohugoio/hugo/releases/download/v${version}/hugo_extended_${version}_linux-amd64.deb"
 
 curl -Lo tmp/hugo.deb ${ghurl}
 
