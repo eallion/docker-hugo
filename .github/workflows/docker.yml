@@ -65,6 +65,14 @@ jobs:
         username: ${{ secrets.CODING_HUGO_USERNAME }}
         password: ${{ secrets.CODING_HUGO_TOKEN }}
 
+    - name: Login to Aliyun
+      if: steps.local_version.outputs.tag != steps.remote_version.outputs.tag
+      uses: docker/login-action@v2
+      with:
+        registry: registry.cn-beijing.aliyuncs.com/eallion/hugo
+        username: ${{ secrets.ALIYUN_HUGO_USERNAME }}
+        password: ${{ secrets.ALIYUN_HUGO_TOKEN }}
+
     - name: Download latest Hugo
       if: steps.local_version.outputs.tag != steps.remote_version.outputs.tag
       run: |
@@ -89,6 +97,8 @@ jobs:
           eallion/hugo:${{ env.VERSION }}
           eallion-docker.pkg.coding.net/eallion/hugo/hugo:latest
           eallion-docker.pkg.coding.net/eallion/hugo/hugo:${{ env.VERSION }}
+          registry.cn-beijing.aliyuncs.com/eallion/hugo:latest
+          registry.cn-beijing.aliyuncs.com/eallion/hugo:${{ env.VERSION }}
 
     - name: Release
       if: steps.local_version.outputs.tag != steps.remote_version.outputs.tag
